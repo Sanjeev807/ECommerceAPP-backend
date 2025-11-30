@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM Quick Test - E-Shop</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step h3 { color: #333; margin-bottom: 10px; }
+        .token-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .result { margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 FCM Quick Test</h1>
+        <p class="subtitle">Test your push notifications in 3 steps</p>
+
+        <div id="mainStatus" class="status info">
+            ℹ️ Checking browser support...
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step">
+            <h3>Step 1: Enable Notifications</h3>
+            <p>Click the button below to request notification permission</p>
+            <button id="enableBtn" onclick="enableNotifications()">📱 Enable Notifications</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step">
+            <h3>Step 2: Test Local Notification</h3>
+            <p>Test if browser notifications work</p>
+            <button id="localTestBtn" onclick="testLocalNotification()" disabled>🔔 Test Browser Notification</button>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step">
+            <h3>Step 3: Test FCM Push</h3>
+            <p>Login and test backend FCM notification</p>
+            <button id="fcmTestBtn" onclick="testFCMNotification()" disabled>🚀 Test FCM Notification</button>
+        </div>
+
+        <div class="result">
+            <h3>Your FCM Token:</h3>
+            <div id="tokenDisplay" class="token-box">Not generated yet</div>
+        </div>
+
+        <div class="result">
+            <h3>Backend Status:</h3>
+            <button onclick="checkBackend()">🔍 Check Backend</button>
+            <div id="backendStatus"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5RY4sAvzez8XevNlhUcNiCLUcrZKxI-k",
+            authDomain: "e-shopeasy.firebaseapp.com",
+            projectId: "e-shopeasy",
+            storageBucket: "e-shopeasy.firebasestorage.app",
+            messagingSenderId: "605116703017",
+            appId: "1:605116703017:web:1deeb57e99a67522309738",
+            measurementId: "G-JT88GF3SF1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+        let fcmToken = null;
+        let authToken = null;
+
+        window.enableNotifications = async function() {
+            try {
+                updateStatus('⏳ Requesting permission...', 'info');
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    updateStatus('✅ Permission granted! Getting FCM token...', 'success');
+                    
+                    const token = await getToken(messaging, {
+                        vapidKey: 'BB1oO5HVWQLQVC3qTw0yPC1g--xeXDinC4dYIiXA1etyCClxSFxVjquTedmV3X4oxAKAHKJB7Xo2wPJob0bZRW8'
+                    });
+                    
+                    if (token) {
+                        fcmToken = token;
+                        document.getElementById('tokenDisplay').textContent = token;
+                        document.getElementById('localTestBtn').disabled = false;
+                        document.getElementById('fcmTestBtn').disabled = false;
+                        updateStatus('✅ FCM Token received! You can now test notifications.', 'success');
+                        console.log('FCM Token:', token);
+                    } else {
+                        updateStatus('⚠️ No FCM token. Check console for errors.', 'warning');
+                    }
+                } else {
+                    updateStatus('❌ Permission denied. Please allow notifications in browser settings.', 'error');
+                }
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+                console.error('Error:', error);
+            }
+        };
+
+        window.testLocalNotification = function() {
+            if (Notification.permission === 'granted') {
+                new Notification('🧪 Local Test Notification', {
+                    body: 'If you see this, browser notifications are working!',
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico'
+                });
+                updateStatus('✅ Local notification sent! Did you see it?', 'success');
+            } else {
+                updateStatus('❌ Please enable notifications first', 'error');
+            }
+        };
+
+        window.testFCMNotification = async function() {
+            if (!authToken) {
+                const email = prompt('Enter your email:');
+                const password = prompt('Enter your password:');
+                
+                if (!email || !password) {
+                    updateStatus('❌ Email and password are required', 'error');
+                    return;
+                }
+
+                try {
+                    updateStatus('⏳ Logging in...', 'info');
+                    const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password, fcmToken })
+                    });
+
+                    if (!loginRes.ok) {
+                        const err = await loginRes.json();
+                        updateStatus('❌ Login failed: ' + err.message, 'error');
+                        return;
+                    }
+
+                    const loginData = await loginRes.json();
+                    authToken = loginData.token;
+                    
+                    // Save FCM token to backend
+                    if (fcmToken) {
+                        try {
+                            const tokenResponse = await fetch((window.API_BASE || 'http://localhost:5000') + '/api/fcm/token', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                },
+                                body: JSON.stringify({ fcmToken })
+                            });
+                            
+                            if (tokenResponse.ok) {
+                                updateStatus('✅ Logged in! FCM token saved! Sending test notification...', 'success');
+                            } else {
+                                updateStatus('⚠️ Logged in but failed to save FCM token. Sending test notification anyway...', 'warning');
+                            }
+                        } catch (err) {
+                            updateStatus('⚠️ Logged in but token save failed. Sending test notification anyway...', 'warning');
+                        }
+                    } else {
+                        updateStatus('✅ Logged in! Sending test notification...', 'success');
+                    }
+                } catch (error) {
+                    updateStatus('❌ Login error: ' + error.message, 'error');
+                    return;
+                }
+            }
+
+            try {
+                updateStatus('⏳ Sending FCM test notification...', 'info');
+                const response = await fetch('http://localhost:5000/api/fcm/test', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    updateStatus('✅ FCM notification sent! Check your notifications!', 'success');
+                } else {
+                    const error = await response.json();
+                    updateStatus('❌ FCM test failed: ' + error.message, 'error');
+                }
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+            }
+        };
+
+        window.checkBackend = async function() {
+            const ports = [5000, 3001, 3000];
+            let backendFound = false;
+            
+            for (const port of ports) {
+                try {
+                    const response = await fetch(`http://localhost:${port}/`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById('backendStatus').innerHTML = 
+                            `<div class="status success">✅ Backend is running on port ${port}</div>`;
+                        window.API_BASE = `http://localhost:${port}`;
+                        backendFound = true;
+                        break;
+                    }
+                } catch (error) {
+                    // Continue to next port
+                }
+            }
+            
+            if (!backendFound) {
+                document.getElementById('backendStatus').innerHTML = 
+                    '<div class="status error">❌ Backend not running on any port. Start with: npm run dev</div>';
+            }
+        };
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('mainStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        onMessage(messaging, (payload) => {
+            console.log('📬 Message received:', payload);
+            updateStatus('📬 FCM notification received: ' + payload.notification.title, 'success');
+            
+            if (Notification.permission === 'granted') {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: '/favicon.ico'
+                });
+            }
+        });
+
+        window.addEventListener('load', async () => {
+            if ('Notification' in window && 'serviceWorker' in navigator) {
+                try {
+                    // Try to register service worker, but don't fail if it's not found
+                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                        .catch(() => null);
+                    
+                    if (registration) {
+                        updateStatus('✅ Browser supports notifications. Service worker registered. Click Step 1 to begin.', 'success');
+                    } else {
+                        updateStatus('✅ Browser supports notifications. (Service worker not required for this test). Click Step 1 to begin.', 'success');
+                    }
+                } catch (error) {
+                    updateStatus('✅ Browser supports notifications. Click Step 1 to begin.', 'success');
+                }
+            } else {
+                updateStatus('❌ Browser does not support notifications', 'error');
+            }
+            
+            // Auto-check backend
+            checkBackend();
+        });
+    </script>
+</body>
+</html>

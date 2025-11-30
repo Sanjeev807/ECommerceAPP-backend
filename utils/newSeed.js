@@ -1,0 +1,747 @@
+require('dotenv').config();
+const { sequelize } = require('../config/database');
+const Product = require('../models/Product');
+
+const sampleProducts = [
+  // ========== 💡 ELECTRONICS CATEGORY (10 products) ==========
+  {
+    name: 'Smart LED TV 55 inch 4K Ultra HD',
+    description: 'Experience stunning visuals with this 55-inch 4K Ultra HD Smart LED TV. Features HDR10+ support, built-in WiFi, Netflix, Prime Video, and YouTube apps. Enjoy crystal-clear picture quality with vibrant colors and deep blacks. Perfect for your home entertainment.',
+    price: 44999,
+    originalPrice: 64999,
+    discount: 31,
+    category: 'Electronics',
+    images: ['https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=500&q=80'],
+    stock: 45,
+    rating: 4.5,
+    reviews: 1234,
+    isFeatured: true,
+    specifications: { 'Screen Size': '55 inches', 'Resolution': '4K UHD', 'Smart TV': 'Yes', 'HDR': 'HDR10+' }
+  },
+  {
+    name: 'Dell Inspiron 15 Laptop - Core i5 11th Gen',
+    description: '15.6" FHD laptop powered by Intel Core i5 11th Gen processor, 8GB RAM, 512GB SSD. Perfect for work, study, and entertainment. Features backlit keyboard, fingerprint reader, and Windows 11. Long battery life of up to 8 hours.',
+    price: 54999,
+    originalPrice: 69999,
+    discount: 21,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/303383/pexels-photo-303383.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 32,
+    rating: 4.3,
+    reviews: 892,
+    isFeatured: true,
+    specifications: { 'Processor': 'Core i5 11th Gen', 'RAM': '8GB', 'Storage': '512GB SSD', 'Display': '15.6" FHD' }
+  },
+  {
+    name: 'iPhone 14 Pro Max 256GB',
+    description: 'Apple iPhone 14 Pro Max with stunning 6.7" Super Retina XDR display, A16 Bionic chip, Pro camera system with 48MP main camera. Features Dynamic Island, Always-On display, and all-day battery life. iOS ecosystem integration.',
+    price: 139900,
+    originalPrice: 149900,
+    discount: 7,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 28,
+    rating: 4.9,
+    reviews: 3421,
+    isFeatured: true,
+    specifications: { 'Storage': '256GB', 'Display': '6.7" OLED', 'Chip': 'A16 Bionic', 'Camera': '48MP Pro' }
+  },
+  {
+    name: 'Sony WH-1000XM5 Wireless Headphones',
+    description: 'Industry-leading noise cancellation with 8 microphones and dual processors. Premium sound quality with 30mm drivers, 30-hour battery life, multipoint connection, and speak-to-chat technology. Ultra-comfortable for all-day wear.',
+    price: 29990,
+    originalPrice: 34990,
+    discount: 14,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 67,
+    rating: 4.7,
+    reviews: 1523,
+    isFeatured: true,
+    specifications: { 'Type': 'Over-Ear', 'Battery': '30 hours', 'Noise Cancellation': 'Yes', 'Connectivity': 'Bluetooth 5.2' }
+  },
+  {
+    name: 'Apple Watch Series 9 GPS 45mm',
+    description: 'Advanced health and fitness tracking with heart rate monitoring, ECG, blood oxygen, sleep tracking, and crash detection. Always-On Retina display, water resistant up to 50m, seamless iPhone integration.',
+    price: 44900,
+    originalPrice: 49900,
+    discount: 10,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 54,
+    rating: 4.8,
+    reviews: 2156,
+    isFeatured: true,
+    specifications: { 'Display': '45mm', 'Connectivity': 'GPS', 'Water Resistance': '50m', 'Features': 'Health Tracking' }
+  },
+  {
+    name: 'JBL Flip 6 Portable Bluetooth Speaker',
+    description: 'Powerful sound in a compact design. IP67 waterproof and dustproof, 12-hour playtime, bold JBL Original Pro Sound. Perfect for outdoor adventures, beach parties, and home entertainment.',
+    price: 9999,
+    originalPrice: 12999,
+    discount: 23,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/8000621/pexels-photo-8000621.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 120,
+    rating: 4.4,
+    reviews: 876,
+    isFeatured: false,
+    specifications: { 'Battery': '12 hours', 'Waterproof': 'IP67', 'Connectivity': 'Bluetooth 5.1', 'Power': '30W' }
+  },
+  {
+    name: 'Anker PowerCore 20000mAh Power Bank',
+    description: 'Ultra-high capacity portable charger with 20000mAh battery. Fast charging technology charges iPhone 8 times, Samsung 5 times. Dual USB ports, LED indicator, advanced safety features.',
+    price: 1999,
+    originalPrice: 2999,
+    discount: 33,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/4195325/pexels-photo-4195325.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 200,
+    rating: 4.6,
+    reviews: 3421,
+    isFeatured: false,
+    specifications: { 'Capacity': '20000mAh', 'Ports': 'Dual USB', 'Fast Charging': 'Yes', 'Weight': '356g' }
+  },
+  {
+    name: 'Canon EOS M50 Mark II Mirrorless Camera',
+    description: '24.1MP APS-C sensor, 4K UHD video recording, Dual Pixel CMOS AF, vari-angle touchscreen LCD. Perfect for vloggers, content creators, and photography enthusiasts. Includes 15-45mm kit lens.',
+    price: 54990,
+    originalPrice: 64990,
+    discount: 15,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 18,
+    rating: 4.7,
+    reviews: 654,
+    isFeatured: true,
+    specifications: { 'Megapixels': '24.1MP', 'Video': '4K UHD', 'Sensor': 'APS-C', 'Autofocus': 'Dual Pixel CMOS AF' }
+  },
+  {
+    name: 'TP-Link AC1200 WiFi Router Dual Band',
+    description: 'High-speed WiFi router with dual-band technology up to 1200Mbps. Four external antennas for maximum coverage, MU-MIMO technology, parental controls, guest network, easy setup.',
+    price: 1799,
+    originalPrice: 2999,
+    discount: 40,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/5474295/pexels-photo-5474295.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 85,
+    rating: 4.2,
+    reviews: 1234,
+    isFeatured: false,
+    specifications: { 'Speed': '1200Mbps', 'Band': 'Dual Band', 'Antennas': '4 External', 'Coverage': 'Large homes' }
+  },
+  {
+    name: 'Sony PlayStation 5 Console',
+    description: 'Experience lightning-fast loading with ultra-high speed SSD, stunning games with 4K graphics up to 120fps, ray tracing, haptic feedback. Includes DualSense wireless controller. The ultimate gaming experience.',
+    price: 49990,
+    originalPrice: 54990,
+    discount: 9,
+    category: 'Electronics',
+    images: ['https://images.pexels.com/photos/371924/pexels-photo-371924.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 12,
+    rating: 4.9,
+    reviews: 5678,
+    isFeatured: true,
+    specifications: { 'Storage': '825GB SSD', 'Graphics': '4K 120fps', 'Controller': 'DualSense', 'Features': 'Ray Tracing' }
+  },
+
+  // ========== 👗 FASHION CATEGORY (10 products) ==========
+  {
+    name: 'Premium Cotton Graphic T-Shirt',
+    description: 'Comfortable 100% cotton graphic tee with trendy designs. Soft fabric, perfect fit, durable print quality. Available in multiple colors and sizes. Ideal for casual wear, gym, or daily use.',
+    price: 499,
+    originalPrice: 999,
+    discount: 50,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/4009409/pexels-photo-4009409.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 350,
+    rating: 4.2,
+    reviews: 2345,
+    isFeatured: false,
+    specifications: { 'Material': '100% Cotton', 'Fit': 'Regular', 'Neck': 'Round Neck', 'Sleeve': 'Half Sleeve' }
+  },
+  {
+    name: "Levi's 511 Slim Fit Denim Jeans",
+    description: 'Classic slim fit jeans from Levi\'s. Premium quality denim with stretch for comfort, dark blue wash, signature leather patch, 5-pocket styling. Timeless style that never goes out of fashion.',
+    price: 2999,
+    originalPrice: 4999,
+    discount: 40,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 180,
+    rating: 4.5,
+    reviews: 3456,
+    isFeatured: true,
+    specifications: { 'Brand': "Levi's", 'Fit': 'Slim', 'Material': 'Stretch Denim', 'Color': 'Dark Blue' }
+  },
+  {
+    name: 'Nike Air Max 270 Running Shoes',
+    description: 'Ultimate comfort with Nike\'s biggest Air Max heel unit. Breathable mesh upper, foam midsole, Max Air cushioning, durable rubber outsole. Perfect for running, training, and everyday wear.',
+    price: 12995,
+    originalPrice: 14995,
+    discount: 13,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 92,
+    rating: 4.6,
+    reviews: 1876,
+    isFeatured: true,
+    specifications: { 'Brand': 'Nike', 'Type': 'Running Shoes', 'Technology': 'Air Max', 'Upper': 'Mesh' }
+  },
+  {
+    name: 'Premium Fleece Hoodie Sweatshirt',
+    description: 'Super soft fleece hoodie with kangaroo pocket, adjustable drawstring hood, ribbed cuffs and hem. Warm, comfortable, and stylish. Perfect for winter, gym, or casual outings.',
+    price: 1299,
+    originalPrice: 2499,
+    discount: 48,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/6567607/pexels-photo-6567607.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 200,
+    rating: 4.3,
+    reviews: 1234,
+    isFeatured: false,
+    specifications: { 'Material': 'Fleece', 'Type': 'Hoodie', 'Pocket': 'Kangaroo', 'Closure': 'Pullover' }
+  },
+  {
+    name: 'Stylish Leather Handbag for Women',
+    description: 'Premium PU leather handbag with spacious compartments, zippered pockets, adjustable strap. Elegant design suitable for office, parties, and daily use. Available in multiple colors.',
+    price: 1499,
+    originalPrice: 2999,
+    discount: 50,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 125,
+    rating: 4.4,
+    reviews: 987,
+    isFeatured: false,
+    specifications: { 'Material': 'PU Leather', 'Type': 'Crossbody/Shoulder Bag', 'Compartments': 'Multiple', 'Closure': 'Zipper' }
+  },
+  {
+    name: 'Fossil Analog Watch for Men',
+    description: 'Classic analog watch with stainless steel case, leather strap, date display, water resistant up to 50m. Minimalist design perfect for formal and casual occasions.',
+    price: 7995,
+    originalPrice: 12995,
+    discount: 38,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 65,
+    rating: 4.5,
+    reviews: 654,
+    isFeatured: true,
+    specifications: { 'Brand': 'Fossil', 'Type': 'Analog', 'Strap': 'Leather', 'Water Resistance': '50m' }
+  },
+  {
+    name: 'Gold Plated Jewelry Set - Necklace & Earrings',
+    description: 'Elegant gold-plated jewelry set with matching necklace and earrings. Anti-tarnish coating, beautiful design, perfect for weddings, parties, and special occasions. Comes in a gift box.',
+    price: 999,
+    originalPrice: 1999,
+    discount: 50,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/1454171/pexels-photo-1454171.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 150,
+    rating: 4.3,
+    reviews: 876,
+    isFeatured: false,
+    specifications: { 'Material': 'Gold Plated', 'Set Includes': 'Necklace + Earrings', 'Occasion': 'Party/Wedding', 'Coating': 'Anti-Tarnish' }
+  },
+  {
+    name: 'Van Heusen Formal Shirt for Men',
+    description: 'Premium cotton formal shirt with wrinkle-free fabric, slim fit, buttoned cuffs, chest pocket. Professional look perfect for office, meetings, and formal events.',
+    price: 1599,
+    originalPrice: 2999,
+    discount: 47,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/297933/pexels-photo-297933.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 175,
+    rating: 4.4,
+    reviews: 1543,
+    isFeatured: false,
+    specifications: { 'Brand': 'Van Heusen', 'Material': 'Cotton', 'Fit': 'Slim', 'Feature': 'Wrinkle Free' }
+  },
+  {
+    name: 'Ray-Ban Aviator Sunglasses',
+    description: 'Classic aviator sunglasses with UV protection, polarized lenses, lightweight metal frame. Iconic Ray-Ban design, superior clarity, comfortable nose pads. Includes case and cleaning cloth.',
+    price: 3999,
+    originalPrice: 6999,
+    discount: 43,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/701877/pexels-photo-701877.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 88,
+    rating: 4.7,
+    reviews: 2134,
+    isFeatured: true,
+    specifications: { 'Brand': 'Ray-Ban', 'Type': 'Aviator', 'UV Protection': '100%', 'Lens': 'Polarized' }
+  },
+  {
+    name: 'Winter Puffer Jacket - Unisex',
+    description: 'Warm quilted puffer jacket with high-quality insulation, water-resistant outer layer, zippered pockets, detachable hood. Perfect for cold weather and outdoor activities.',
+    price: 2999,
+    originalPrice: 5999,
+    discount: 50,
+    category: 'Fashion',
+    images: ['https://images.pexels.com/photos/7679454/pexels-photo-7679454.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 110,
+    rating: 4.5,
+    reviews: 1287,
+    isFeatured: false,
+    specifications: { 'Type': 'Puffer Jacket', 'Insulation': 'Polyester Fill', 'Hood': 'Detachable', 'Feature': 'Water Resistant' }
+  },
+
+  // ========== 🏡 HOME & LIVING CATEGORY (10 products) ==========
+  {
+    name: 'Premium Cotton Bed Sheet Set - Queen Size',
+    description: '300 thread count premium cotton bed sheet set including 1 fitted sheet, 1 flat sheet, and 2 pillow covers. Soft, breathable, fade-resistant. Available in multiple colors.',
+    price: 1499,
+    originalPrice: 2999,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 145,
+    rating: 4.3,
+    reviews: 1876,
+    isFeatured: false,
+    specifications: { 'Material': '100% Cotton', 'Thread Count': '300', 'Size': 'Queen', 'Set Includes': '4 pieces' }
+  },
+  {
+    name: 'Ceramic Decorative Flower Vase',
+    description: 'Beautiful handcrafted ceramic vase with modern geometric design. Perfect for fresh or artificial flowers, adds elegance to any room. Durable, easy to clean, waterproof.',
+    price: 599,
+    originalPrice: 1299,
+    discount: 54,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/1047319/pexels-photo-1047319.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 200,
+    rating: 4.4,
+    reviews: 654,
+    isFeatured: false,
+    specifications: { 'Material': 'Ceramic', 'Design': 'Geometric', 'Height': '10 inches', 'Color': 'White/Gold' }
+  },
+  {
+    name: 'Fine Bone China Dinnerware Set - 24 Pieces',
+    description: 'Elegant 24-piece dinnerware set including dinner plates, side plates, bowls, and cups. Microwave and dishwasher safe. Perfect for family dining and entertaining guests.',
+    price: 3999,
+    originalPrice: 7999,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/1395964/pexels-photo-1395964.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 75,
+    rating: 4.6,
+    reviews: 987,
+    isFeatured: true,
+    specifications: { 'Material': 'Bone China', 'Pieces': '24', 'Microwave Safe': 'Yes', 'Dishwasher Safe': 'Yes' }
+  },
+  {
+    name: 'Aromatic Scented Candles Gift Set - 6 Pack',
+    description: 'Luxury scented candles set with 6 different fragrances: Lavender, Vanilla, Rose, Jasmine, Sandalwood, Ocean Breeze. Long-lasting burn time, natural soy wax, lead-free cotton wicks.',
+    price: 999,
+    originalPrice: 1999,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/3756781/pexels-photo-3756781.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 180,
+    rating: 4.5,
+    reviews: 1234,
+    isFeatured: false,
+    specifications: { 'Quantity': '6 candles', 'Wax': 'Soy Wax', 'Burn Time': '20+ hours each', 'Fragrances': '6 varieties' }
+  },
+  {
+    name: 'Ceramic Coffee Mug Set - 6 Pieces',
+    description: 'Colorful ceramic coffee mug set with unique designs. Each mug holds 350ml, perfect for coffee, tea, hot chocolate. Microwave and dishwasher safe. Great gift idea.',
+    price: 799,
+    originalPrice: 1599,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/6069131/pexels-photo-6069131.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 220,
+    rating: 4.3,
+    reviews: 876,
+    isFeatured: false,
+    specifications: { 'Material': 'Ceramic', 'Capacity': '350ml', 'Quantity': '6 mugs', 'Care': 'Dishwasher Safe' }
+  },
+  {
+    name: 'Blackout Curtains - Window Drapes 2 Panels',
+    description: '100% blackout curtains block 99% of light and UV rays. Thermal insulated, noise reducing, energy efficient. Easy to install with rod pocket design. Multiple sizes and colors available.',
+    price: 1299,
+    originalPrice: 2499,
+    discount: 48,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/6044266/pexels-photo-6044266.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 135,
+    rating: 4.4,
+    reviews: 1543,
+    isFeatured: false,
+    specifications: { 'Light Blocking': '99%', 'Panels': '2', 'Features': 'Thermal Insulated', 'Installation': 'Rod Pocket' }
+  },
+  {
+    name: 'Soft Shaggy Area Rug 5x7 Feet',
+    description: 'Ultra-soft shaggy area rug perfect for living room, bedroom, or nursery. Non-slip backing, stain-resistant, easy to clean. Adds warmth and style to any space.',
+    price: 2499,
+    originalPrice: 4999,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/6782567/pexels-photo-6782567.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 90,
+    rating: 4.5,
+    reviews: 765,
+    isFeatured: true,
+    specifications: { 'Size': "5'x7'", 'Material': 'Polyester', 'Backing': 'Non-Slip', 'Pile Height': '1.5 inches' }
+  },
+  {
+    name: 'Velvet Throw Pillow Covers - 4 Pack',
+    description: 'Luxurious velvet cushion covers with invisible zipper, 18x18 inches. Soft texture, durable fabric, adds elegance to sofa, bed, or chair. Machine washable. (Inserts not included)',
+    price: 699,
+    originalPrice: 1399,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/6315943/pexels-photo-6315943.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 250,
+    rating: 4.4,
+    reviews: 1234,
+    isFeatured: false,
+    specifications: { 'Material': 'Velvet', 'Size': '18x18 inches', 'Quantity': '4 covers', 'Closure': 'Invisible Zipper' }
+  },
+  {
+    name: 'Wooden Photo Frame Set - 8 Pieces',
+    description: 'Classic wooden photo frame set with 8 different sizes (4x6, 5x7, 8x10). High-quality wood finish, glass front, easy wall mounting or tabletop display. Create your gallery wall.',
+    price: 1499,
+    originalPrice: 2999,
+    discount: 50,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/1974508/pexels-photo-1974508.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 115,
+    rating: 4.5,
+    reviews: 987,
+    isFeatured: false,
+    specifications: { 'Material': 'Wood', 'Quantity': '8 frames', 'Sizes': 'Mixed', 'Mount': 'Wall/Table' }
+  },
+  {
+    name: 'Woven Storage Baskets Set - 3 Pieces',
+    description: 'Natural seagrass woven storage baskets in 3 sizes. Perfect for organizing toys, laundry, magazines, plants. Eco-friendly, durable, with sturdy handles. Adds rustic charm to any room.',
+    price: 1299,
+    originalPrice: 2499,
+    discount: 48,
+    category: 'Home',
+    images: ['https://images.pexels.com/photos/4207892/pexels-photo-4207892.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 160,
+    rating: 4.3,
+    reviews: 654,
+    isFeatured: false,
+    specifications: { 'Material': 'Seagrass', 'Quantity': '3 baskets', 'Sizes': 'S, M, L', 'Handles': 'Yes' }
+  },
+
+  // ========== 📚 BOOKS CATEGORY (10 products) ==========
+  {
+    name: 'The Alchemist by Paulo Coelho',
+    description: 'International bestseller about following your dreams. Santiago\'s journey teaches about destiny, personal legends, and listening to your heart. Timeless wisdom in simple prose. Essential reading for dreamers and seekers.',
+    price: 299,
+    originalPrice: 399,
+    discount: 25,
+    category: 'Books',
+    images: ['https://images-na.ssl-images-amazon.com/images/I/51Z-QHKAQaL._SX319_BO1,204,203,200_.jpg'],
+    stock: 500,
+    rating: 4.8,
+    reviews: 15678,
+    isFeatured: true,
+    specifications: { 'Author': 'Paulo Coelho', 'Pages': '197', 'Genre': 'Fiction', 'Publisher': 'HarperCollins' }
+  },
+  {
+    name: 'Atomic Habits by James Clear',
+    description: '#1 New York Times bestseller on building good habits and breaking bad ones. Practical strategies backed by science. Learn the Four Laws of Behavior Change. Transform your life with tiny changes.',
+    price: 399,
+    originalPrice: 599,
+    discount: 33,
+    category: 'Books',
+    images: ['https://images-na.ssl-images-amazon.com/images/I/51-nXsSRfZL._SX328_BO1,204,203,200_.jpg'],
+    stock: 450,
+    rating: 4.9,
+    reviews: 23456,
+    isFeatured: true,
+    specifications: { 'Author': 'James Clear', 'Pages': '320', 'Genre': 'Self-Help', 'Publisher': 'Penguin Random House' }
+  },
+  {
+    name: 'Pride and Prejudice by Jane Austen',
+    description: 'Classic literature masterpiece about Elizabeth Bennet and Mr. Darcy. Timeless tale of love, society, and overcoming first impressions. Witty, romantic, and beautifully written.',
+    price: 199,
+    originalPrice: 299,
+    discount: 33,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/4207707/pexels-photo-4207707.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 600,
+    rating: 4.7,
+    reviews: 8976,
+    isFeatured: false,
+    specifications: { 'Author': 'Jane Austen', 'Pages': '432', 'Genre': 'Classic Literature', 'Publisher': 'Penguin Classics' }
+  },
+  {
+    name: 'Indian Cooking for Beginners - Recipe Book',
+    description: 'Comprehensive cookbook with 100+ authentic Indian recipes. Step-by-step instructions, beautiful photos, tips for spices and techniques. From basic curries to elaborate biryanis.',
+    price: 449,
+    originalPrice: 699,
+    discount: 36,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/46274/pexels-photo-46274.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 280,
+    rating: 4.4,
+    reviews: 1876,
+    isFeatured: false,
+    specifications: { 'Type': 'Cookbook', 'Recipes': '100+', 'Cuisine': 'Indian', 'Level': 'Beginner to Advanced' }
+  },
+  {
+    name: 'The Gruffalo - Children\'s Picture Book',
+    description: 'Award-winning children\'s book about a clever mouse and imaginary monster. Beautiful illustrations, rhyming text, teaches courage and wit. Perfect for bedtime reading ages 3-7.',
+    price: 349,
+    originalPrice: 499,
+    discount: 30,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/694740/pexels-photo-694740.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 420,
+    rating: 4.9,
+    reviews: 5432,
+    isFeatured: true,
+    specifications: { 'Author': 'Julia Donaldson', 'Age': '3-7 years', 'Pages': '32', 'Format': 'Picture Book' }
+  },
+  {
+    name: 'Rich Dad Poor Dad by Robert Kiyosaki',
+    description: 'Revolutionary book about money and investing. Learn what the rich teach their kids about money. Challenges conventional wisdom about wealth, assets, and financial freedom.',
+    price: 299,
+    originalPrice: 499,
+    discount: 40,
+    category: 'Books',
+    images: ['https://images-na.ssl-images-amazon.com/images/I/51Wa7Gax8xL._SX331_BO1,204,203,200_.jpg'],
+    stock: 550,
+    rating: 4.6,
+    reviews: 12345,
+    isFeatured: true,
+    specifications: { 'Author': 'Robert Kiyosaki', 'Pages': '336', 'Genre': 'Business & Finance', 'Publisher': 'Plata Publishing' }
+  },
+  {
+    name: 'Harry Potter and the Philosopher\'s Stone',
+    description: 'The magical adventure begins! Harry discovers he\'s a wizard and enters Hogwarts. Friendship, magic, and the fight against evil. Perfect for young adults and fantasy lovers.',
+    price: 399,
+    originalPrice: 599,
+    discount: 33,
+    category: 'Books',
+    images: ['https://images-na.ssl-images-amazon.com/images/I/71HSkVXqPcL._SY466_.jpg'],
+    stock: 380,
+    rating: 4.9,
+    reviews: 34567,
+    isFeatured: true,
+    specifications: { 'Author': 'J.K. Rowling', 'Pages': '352', 'Genre': 'YA Fantasy', 'Series': 'Harry Potter #1' }
+  },
+  {
+    name: 'You Can Win by Shiv Khera',
+    description: 'Motivational classic that has inspired millions. Practical wisdom on attitude, success, leadership, and achieving goals. Simple language with powerful impact. Essential self-help reading.',
+    price: 249,
+    originalPrice: 399,
+    discount: 38,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/4207901/pexels-photo-4207901.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 620,
+    rating: 4.5,
+    reviews: 15678,
+    isFeatured: false,
+    specifications: { 'Author': 'Shiv Khera', 'Pages': '268', 'Genre': 'Motivational', 'Publisher': 'Bloomsbury' }
+  },
+  {
+    name: 'The Girl on the Train by Paula Hawkins',
+    description: 'Gripping psychological thriller about obsession and deception. Rachel watches the same couple every day from the train until she witnesses something shocking. Unputdownable suspense.',
+    price: 349,
+    originalPrice: 499,
+    discount: 30,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/159866/books-book-pages-read-literature-159866.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 290,
+    rating: 4.3,
+    reviews: 8765,
+    isFeatured: false,
+    specifications: { 'Author': 'Paula Hawkins', 'Pages': '395', 'Genre': 'Crime Thriller', 'Publisher': 'Penguin' }
+  },
+  {
+    name: 'Sapiens: A Brief History of Humankind',
+    description: 'Fascinating exploration of human history from Stone Age to modern age. Yuval Noah Harari examines how Homo sapiens came to dominate the world. Mind-expanding and thought-provoking.',
+    price: 499,
+    originalPrice: 699,
+    discount: 29,
+    category: 'Books',
+    images: ['https://images.pexels.com/photos/1029141/pexels-photo-1029141.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 340,
+    rating: 4.7,
+    reviews: 9876,
+    isFeatured: true,
+    specifications: { 'Author': 'Yuval Noah Harari', 'Pages': '512', 'Genre': 'History/Science', 'Publisher': 'Vintage' }
+  },
+
+  // ========== 🏋️ SPORTS & FITNESS CATEGORY (10 products) ==========
+  {
+    name: 'Premium NBR Yoga Mat 6mm with Bag',
+    description: 'High-density NBR foam yoga mat with superior cushioning, non-slip textured surface, moisture-resistant. Includes carrying bag and strap. Perfect for yoga, pilates, stretching, and meditation.',
+    price: 799,
+    originalPrice: 1499,
+    discount: 47,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 220,
+    rating: 4.5,
+    reviews: 2345,
+    isFeatured: true,
+    specifications: { 'Material': 'NBR Foam', 'Thickness': '6mm', 'Size': '183x61cm', 'Includes': 'Carrying Bag' }
+  },
+  {
+    name: 'Optimum Nutrition Whey Protein 2kg',
+    description: '100% Gold Standard Whey Protein with 24g protein per serving. Fast absorption, BCAAs, glutamine. Available in delicious flavors: Chocolate, Vanilla, Strawberry. Builds lean muscle.',
+    price: 3499,
+    originalPrice: 4999,
+    discount: 30,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/6550835/pexels-photo-6550835.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 145,
+    rating: 4.7,
+    reviews: 8976,
+    isFeatured: true,
+    specifications: { 'Protein per Serving': '24g', 'Weight': '2kg', 'Servings': '66', 'Flavor': 'Multiple' }
+  },
+  {
+    name: 'Cast Iron Adjustable Dumbbells 20kg Pair',
+    description: 'Professional gym-quality dumbbells with adjustable weight plates. Non-slip grip handles, durable cast iron construction. Weight range: 2kg to 20kg per dumbbell. Space-saving design.',
+    price: 2999,
+    originalPrice: 4999,
+    discount: 40,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/416717/pexels-photo-416717.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 78,
+    rating: 4.4,
+    reviews: 1876,
+    isFeatured: false,
+    specifications: { 'Weight Range': '2-20kg each', 'Material': 'Cast Iron', 'Grip': 'Non-Slip', 'Set': 'Pair' }
+  },
+  {
+    name: 'Stainless Steel Sports Water Bottle 1000ml',
+    description: 'Double-wall insulated vacuum bottle keeps drinks cold for 24hrs, hot for 12hrs. BPA-free, leak-proof lid, wide mouth for ice cubes. Perfect for gym, cycling, hiking, office.',
+    price: 699,
+    originalPrice: 1299,
+    discount: 46,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/4039921/pexels-photo-4039921.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 320,
+    rating: 4.6,
+    reviews: 3456,
+    isFeatured: false,
+    specifications: { 'Capacity': '1000ml', 'Material': 'Stainless Steel', 'Insulation': '24hrs Cold', 'Feature': 'Leak-Proof' }
+  },
+  {
+    name: 'Nike Revolution 6 Running Shoes',
+    description: 'Lightweight running shoes with breathable mesh, responsive cushioning, durable rubber outsole. Computer-generated design for support. Perfect for daily runs and training.',
+    price: 3495,
+    originalPrice: 4995,
+    discount: 30,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 165,
+    rating: 4.5,
+    reviews: 2345,
+    isFeatured: true,
+    specifications: { 'Brand': 'Nike', 'Type': 'Running Shoes', 'Upper': 'Mesh', 'Cushioning': 'Foam Midsole' }
+  },
+  {
+    name: 'Fitbit Charge 5 Fitness Tracker',
+    description: 'Advanced fitness tracker with heart rate monitoring, GPS, sleep tracking, stress management, 20+ exercise modes. AMOLED display, 7-day battery life. Sync with smartphone app.',
+    price: 14999,
+    originalPrice: 17999,
+    discount: 17,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 92,
+    rating: 4.6,
+    reviews: 4567,
+    isFeatured: true,
+    specifications: { 'Display': 'AMOLED', 'Battery': '7 days', 'GPS': 'Built-in', 'Water Resistant': '50m' }
+  },
+  {
+    name: 'Speed Skipping Rope with Counter',
+    description: 'Professional jump rope with adjustable steel cable, ball-bearing system, digital counter, comfortable foam handles. Perfect for cardio, HIIT, boxing training. Includes carry bag.',
+    price: 399,
+    originalPrice: 799,
+    discount: 50,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/4498362/pexels-photo-4498362.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 280,
+    rating: 4.3,
+    reviews: 1234,
+    isFeatured: false,
+    specifications: { 'Cable': 'Steel Wire', 'Counter': 'Digital', 'Length': 'Adjustable', 'Handles': 'Foam Grip' }
+  },
+  {
+    name: 'Red Leather Ball',
+    description: 'Premium quality red leather cricket ball with 4-piece construction, cork core, hand-stitched seam. Perfect for professional matches and practice sessions. Durable and long-lasting.',
+    price: 599,
+    originalPrice: 999,
+    discount: 40,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/1661950/pexels-photo-1661950.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 45,
+    rating: 4.7,
+    reviews: 987,
+    isFeatured: true,
+    specifications: { 'Material': 'Leather', 'Color': 'Red', 'Weight': '156g', 'Construction': '4-Piece' }
+  },
+  {
+    name: 'Gym Workout Gloves - Weight Lifting',
+    description: 'Premium leather palm gloves with wrist support, breathable mesh back, padded protection. Prevents calluses and improves grip. Suitable for weightlifting, pull-ups, cycling.',
+    price: 599,
+    originalPrice: 1199,
+    discount: 50,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/6455928/pexels-photo-6455928.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 195,
+    rating: 4.4,
+    reviews: 1543,
+    isFeatured: false,
+    specifications: { 'Material': 'Leather + Mesh', 'Wrist Support': 'Yes', 'Padding': 'Gel Cushioned', 'Closure': 'Velcro' }
+  },
+  {
+    name: 'Resistance Bands Set - 5 Levels',
+    description: 'Set of 5 resistance bands with varying resistance levels (5-35 lbs). Includes door anchor, handles, ankle straps, carrying bag. Perfect for strength training, rehabilitation, stretching.',
+    price: 899,
+    originalPrice: 1799,
+    discount: 50,
+    category: 'Sports',
+    images: ['https://images.pexels.com/photos/4397841/pexels-photo-4397841.jpeg?auto=compress&cs=tinysrgb&w=500'],
+    stock: 240,
+    rating: 4.5,
+    reviews: 2876,
+    isFeatured: false,
+    specifications: { 'Bands': '5 Levels', 'Resistance': '5-35 lbs', 'Material': 'Latex', 'Includes': 'Accessories + Bag' }
+  }
+];
+
+const seedDatabase = async () => {
+  try {
+    // Sync database and create tables without dropping existing data
+    await sequelize.sync({ alter: true });
+
+    // Check if products already exist
+    const existingCount = await Product.count();
+    console.log(`📊 Found ${existingCount} existing products in database`);
+
+    // If we have fewer than 50 products, clear and reseed with all 50
+    if (existingCount < 50) {
+      console.log('📦 Insufficient products found. Reseeding database with 50 products...');
+      
+      // Clear existing products and insert all 50
+      await Product.destroy({ where: {} });
+      await Product.bulkCreate(sampleProducts);
+
+      const newCount = await Product.count();
+      console.log(`✅ Successfully seeded ${newCount} products into the database!`);
+    } else {
+      console.log('✅ Database already has sufficient products. Skipping seed process.');
+    }
+
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error seeding database:', error);
+    process.exit(1);
+  }
+};
+
+seedDatabase();
