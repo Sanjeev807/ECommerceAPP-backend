@@ -115,11 +115,14 @@ exports.login = async (req, res) => {
 
     console.log(`✅ Login successful for: ${email}`);
 
-    // Update FCM token if provided
+    // Update FCM token if provided and reload user to ensure it's set
     if (fcmToken) {
       user.fcmToken = fcmToken;
       await user.save();
-      console.log(`✅ FCM token updated for user: ${user.email}`);
+      console.log(`✅ FCM token saved for user: ${user.email}`);
+      console.log(`🔑 Token: ${fcmToken.substring(0, 20)}...`);
+    } else {
+      console.log(`⚠️ No FCM token provided in login request`);
     }
 
     // Send notifications (optional, don't fail login if they error)
@@ -138,38 +141,81 @@ exports.login = async (req, res) => {
     }
 
     // Send FCM push notifications for login (optional)
-    if (user.fcmToken) {
+    if (user.fcmToken && user.fcmToken.trim() !== '') {
       try {
-        console.log(`📲 Sending FCM notifications to user: ${user.email}`);
+        console.log(`📲 Sending 6 FCM notifications to user: ${user.email}`);
+        console.log(`📱 Using FCM token: ${user.fcmToken.substring(0, 20)}...`);
         
         // Check if FCM service is available and has the required methods
         if (fcmService && typeof fcmService.sendToUser === 'function') {
           const notifications = [
+            // 1. Personalized Welcome
             fcmService.sendToUser(
               user.id,
-              `🎉 Welcome Back, ${user.name}!`,
-              'Great to see you again! Your favorite deals are waiting for you.',
+              `👋 Welcome Back, ${user.name}!`,
+              `Hi ${user.name}! Great to see you again. Your favorite deals are waiting for you.`,
               { type: 'account', action: 'login', link: '/' }
             ),
+            // 2. Login Success Confirmation
             fcmService.sendToUser(
               user.id,
               '✅ Login Successful',
               'You\'re all set! Push notifications are enabled for exclusive deals and updates.',
               { type: 'account', action: 'login_confirmed', link: '/' }
+            ),
+            // 3. Flash Sale Alert
+            fcmService.sendToUser(
+              user.id,
+              '🔥 Flash Sale Live Now!',
+              `${user.name}, don't miss our limited-time flash sale! Up to 70% off on selected items.`,
+              { type: 'promotional', action: 'flash_sale', link: '/products' }
+            ),
+            // 4. New Arrivals
+            fcmService.sendToUser(
+              user.id,
+              '✨ New Arrivals Just for You!',
+              `Hey ${user.name}! Check out fresh products handpicked based on your preferences.`,
+              { type: 'engagement', action: 'new_arrivals', link: '/products?filter=new' }
+            ),
+            // 5. Trending Products
+            fcmService.sendToUser(
+              user.id,
+              '🌟 Trending Products Right Now',
+              `${user.name}, these hot products are selling fast! Limited stock available.`,
+              { type: 'engagement', action: 'trending', link: '/products?filter=trending' }
+            ),
+            // 6. Special Offer for the User
+            fcmService.sendToUser(
+              user.id,
+              '🎁 Special Offer Unlocked!',
+              `Exclusive for you, ${user.name}! Get extra 20% off on your first purchase today.`,
+              { type: 'promotional', action: 'exclusive_offer', link: '/offers' }
             )
           ];
           
-          await Promise.all(notifications);
-          console.log(`✅ FCM notifications sent successfully!`);
+          // Send notifications with a slight delay between each to avoid overwhelming
+          for (let i = 0; i < notifications.length; i++) {
+            await notifications[i];
+            // Small delay between notifications (500ms)
+            if (i < notifications.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+          
+          console.log(`✅ ${notifications.length} FCM notifications sent successfully to ${user.name}!`);
         } else {
           console.log('⚠️ FCM service methods not available, skipping notifications');
         }
       } catch (fcmError) {
         logger.error('FCM notification failed (non-critical):', fcmError);
+        console.error('❌ FCM Error Details:', fcmError.message);
+        console.error('   Error stack:', fcmError.stack);
         console.log('⚠️ FCM notifications failed, but login succeeded');
       }
     } else {
-      console.log('⚠️ No FCM token available, skipping push notifications');
+      console.log('⚠️ No FCM token available for push notifications');
+      console.log(`   User: ${user.email}`);
+      console.log(`   Token in DB: ${user.fcmToken ? 'exists' : 'null/empty'}`);
     }
 
     logger.info(`User logged in: ${user.email}`);

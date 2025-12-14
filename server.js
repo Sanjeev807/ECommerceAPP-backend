@@ -88,7 +88,14 @@ try {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8081'],
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000', 
+    'http://localhost:8081',
+    'http://10.99.50.245:3000',
+    'http://10.99.50.245:5000',
+    'http://10.99.50.245:8081'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -103,6 +110,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from backend directory (for test files, service worker, etc.)
+app.use(express.static(__dirname));
 
 // Serve static files for admin panel
 app.use(express.static('../frontend'));
@@ -177,22 +187,26 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Enhanced error handling for server startup
 const startServer = () => {
   try {
-    const server = app.listen(PORT, () => {
-      logger.info(`🚀 E-commerce server running on port ${PORT}`);
-      logger.info(`📱 Push notifications enabled via Firebase Cloud Messaging`);
-      logger.info(`🏪 Admin panel: http://localhost:${PORT}/admin.html`);
-      logger.info(`🌐 API endpoints: http://localhost:${PORT}/api`);
-      logger.info(`📊 Health check: http://localhost:${PORT}/`);
+    const server = app.listen(PORT, HOST, () => {
+      const serverURL = HOST === '0.0.0.0' ? 'localhost' : HOST;
       
-      console.log(`🚀 E-commerce server running on port ${PORT}`);
+      logger.info(`🚀 E-commerce server running on ${HOST}:${PORT}`);
+      logger.info(`📱 Push notifications enabled via Firebase Cloud Messaging`);
+      logger.info(`🏪 Admin panel: http://${serverURL}:${PORT}/admin.html`);
+      logger.info(`🌐 API endpoints: http://${serverURL}:${PORT}/api`);
+      logger.info(`📊 Health check: http://${serverURL}:${PORT}/`);
+      
+      console.log(`🚀 E-commerce server running on ${HOST}:${PORT}`);
       console.log(`📱 Push notifications enabled via Firebase Cloud Messaging`);
-      console.log(`🏪 Admin panel: http://localhost:${PORT}/admin.html`);
-      console.log(`🌐 API endpoints: http://localhost:${PORT}/api`);
-      console.log(`📊 Health check: http://localhost:${PORT}/`);
+      console.log(`🏪 Admin panel: http://${serverURL}:${PORT}/admin.html`);
+      console.log(`🌐 API endpoints: http://${serverURL}:${PORT}/api`);
+      console.log(`📊 Health check: http://${serverURL}:${PORT}/`);
+      console.log(`🧪 FCM Test page: http://${serverURL}:${PORT}/fcm-simple-test.html`);
       console.log('✅ Server startup complete!');
       console.log('\n🎯 Ready for user registration and login!');
       console.log('   - Registration endpoint: POST /api/auth/register');
